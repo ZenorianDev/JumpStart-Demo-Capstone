@@ -23,25 +23,25 @@ export default function AIPreferenceChart() {
   }, []);
 
   return (
-    <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl shadow mt-6">
-      <h2 className="text-lg font-semibold mb-2 text-gray-800 dark:text-gray-100">
-        🧠 Your AI Feed Preferences
-      </h2>
+    <div className="border border-gray-300 p-4 rounded-2xl mt-6">
+    <h2 className="text-lg font-semibold mb-2 text-black">
+        Your AI Feed Preferences
+    </h2>
 
-      {data.length === 0 ? (
-        <p className="text-gray-500">No data yet — start exploring content!</p>
-      ) : (
+    {data.length === 0 ? (
+        <p className="text-gray-700">No data yet — start exploring content!</p>
+    ) : (
         <ul className="space-y-2">
-          {data.map((item) => (
+        {data.map((item) => (
             <li key={item.category} className="flex justify-between">
-              <span className="capitalize">{item.category}</span>
-              <span className="text-blue-600 font-semibold">
+            <span className="capitalize text-gray-800">{item.category}</span>
+            <span className="text-black font-semibold">
                 {item.score.toFixed(1)}
-              </span>
+            </span>
             </li>
-          ))}
+        ))}
         </ul>
-      )}
+    )}
     </div>
   );
 }
