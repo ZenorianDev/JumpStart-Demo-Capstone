@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 const interestsList = [
   { id: 1, title: "Fashion", img: "/images/fashion.jpg" },
@@ -20,6 +21,7 @@ const interestsList = [
 
 export default function InterestSelectionPage() {
   const [selectedInterests, setSelectedInterests] = useState<number[]>([]);
+  const router = useRouter();
 
   const toggleInterest = (id: number) => {
     setSelectedInterests((prev) =>
@@ -29,11 +31,28 @@ export default function InterestSelectionPage() {
     );
   };
 
+  const handleContinue = () => {
+    const selectedTitles = interestsList
+      .filter((i) => selectedInterests.includes(i.id))
+      .map((i) => i.title);
+
+    // Save selected interests to localStorage
+    localStorage.setItem("userInterests", JSON.stringify(selectedTitles));
+
+    // Navigate to Dashboard
+    router.push("/dashboard");
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-white">
       {/* Navbar */}
       <nav className="sticky top-0 bg-black text-white flex justify-between items-center px-10 py-4 z-50">
-        <h1 className="font-bold text-xl cursor-pointer">JumpStart</h1>
+        <h1
+          onClick={() => router.push("/")}
+          className="font-bold text-xl cursor-pointer"
+        >
+          JumpStart
+        </h1>
         <ul className="hidden md:flex space-x-6">
           <li className="cursor-pointer">Explore</li>
           <li className="cursor-pointer">About</li>
@@ -82,15 +101,27 @@ export default function InterestSelectionPage() {
                 className="object-cover"
               />
             </div>
-            <div className="absolute bottom-0 w-full text-center bg-black/60 text-white py-2">
+            <div className="absolute bottom-0 w-full text-center bg-black/60 text-white py-2 text-sm md:text-base">
               {interest.title}
             </div>
           </div>
         ))}
       </section>
 
+      {/* Continue Button */}
+      {selectedInterests.length > 0 && (
+        <div className="fixed bottom-8 left-0 right-0 flex justify-center">
+          <button
+            onClick={handleContinue}
+            className="bg-black text-white px-6 py-3 rounded-full shadow-lg hover:bg-gray-800 transition-all"
+          >
+            Confirm Selection
+          </button>
+        </div>
+      )}
+
       {/* Footer */}
-      <footer className="bg-black text-white py-10 text-center text-sm">
+      <footer className="bg-black text-white py-10 text-center text-sm mt-auto">
         <p>© 2025 JumpStart | All Rights Reserved.</p>
       </footer>
     </div>
