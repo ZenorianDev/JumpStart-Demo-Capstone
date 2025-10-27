@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Bell, Home, PenTool, User, Settings } from "lucide-react";
-import { interestsData } from "@/lib/data"; // your previously created data file
+import { interestsData } from "@/lib/data"; 
 import { aiPersonalization, Item } from "@/lib/aiLogic";
 
 interface Tile {
@@ -22,7 +22,7 @@ export default function DashboardPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Defer calculation to avoid "setState in effect" warning
+    // Defer calculation to avoid blocking rendering
     const t = setTimeout(() => {
       const saved = localStorage.getItem("userInterests");
       if (!saved) {
@@ -53,7 +53,7 @@ export default function DashboardPage() {
       const weights = aiPersonalization.computeWeightsFromItems(items);
       const sorted = aiPersonalization.sortItemsByPreference(items, weights);
 
-      // Convert sorted items to Tiles (string ids guaranteed)
+      // Convert sorted items to Tiles 
       const mapped: Tile[] = sorted.map((it, idx) => ({
         id: String(it.id),
         title: it.title,
@@ -70,7 +70,7 @@ export default function DashboardPage() {
   }, [router]);
 
   const handleTileClick = (tile: Tile) => {
-    // record interaction and navigate (tile.id is string)
+    // record interaction and navigate 
     aiPersonalization.recordInteraction(tile.category);
     router.push(`/details/${encodeURIComponent(tile.id)}`);
   };

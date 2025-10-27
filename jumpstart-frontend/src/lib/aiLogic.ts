@@ -1,6 +1,6 @@
 // src/lib/aiLogic.ts
 export interface Item {
-  id: string;       // always string
+  id: string;     
   title: string;
   img: string;
   category: string;

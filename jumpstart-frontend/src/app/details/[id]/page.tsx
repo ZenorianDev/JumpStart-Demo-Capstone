@@ -35,7 +35,6 @@ export default function DetailPage() {
         }))
       );
 
-      // find by id (id is a string like "Fashion-0")
       const found = all.find((it) => it.id === id || it.title.toLowerCase() === id.toLowerCase());
       if (!found) {
         router.push("/dashboard");
@@ -77,7 +76,7 @@ export default function DetailPage() {
               </div>
 
               <button className="px-5 py-2 bg-black text-white rounded-full" onClick={() => router.push("/dashboard")}>
-                Back to Feed
+                Add to Cart
               </button>
             </div>
           </div>
