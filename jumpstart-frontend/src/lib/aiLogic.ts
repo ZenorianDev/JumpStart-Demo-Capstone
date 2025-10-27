@@ -1,79 +1,55 @@
 // src/lib/aiLogic.ts
-
-export type Item = {
-  id: number;
+export interface Item {
+  id: string; // ✅ unified as string
   title: string;
   img: string;
   category: string;
-  description?: string;
-  likes?: number;
-};
+}
+
+interface Interest {
+  id: string;
+  title: string;
+  img: string;
+}
 
 export const aiPersonalization = {
-  // Save interaction
-  recordInteraction(category: string) {
-    const data = JSON.parse(localStorage.getItem("userInteractions") || "{}");
-    data[category] = (data[category] || 0) + 1;
-    localStorage.setItem("userInteractions", JSON.stringify(data));
-  },
-
-  // Retrieve current weights
-  getWeights(categories: string[]): Record<string, number> {
-    const data = JSON.parse(localStorage.getItem("userInteractions") || "{}");
+  getWeights(interests: Interest[]): Record<string, number> {
     const weights: Record<string, number> = {};
-    categories.forEach((cat) => {
-      weights[cat] = data[cat] || 1;
+    interests.forEach((i, idx) => {
+      // give higher weights to earlier (preferred) interests
+      weights[i.title] = 1 / (idx + 1);
     });
     return weights;
   },
 
-  // Sort items based on preference
-  sortItemsByPreference(items: Item[], weights: Record<string, number>) {
-    return [...items].sort(
-      (a, b) => (weights[b.category] || 0) - (weights[a.category] || 0)
-    );
+  sortItemsByPreference(items: Item[], weights: Record<string, number>): Item[] {
+    return [...items].sort((a, b) => {
+      const wA = weights[a.category] ?? 0;
+      const wB = weights[b.category] ?? 0;
+      return wB - wA;
+    });
   },
 
-  // Generate simple AI-like description
-  generateDescription(item: Item): string {
-    const templates = [
-      `Experience the essence of ${item.category.toLowerCase()} with "${item.title}". Designed to match your personal style.`,
-      `"${item.title}" is the perfect example of ${item.category.toLowerCase()} innovation. Stylish, smart, and made for you.`,
-      `Inspired by your interest in ${item.category.toLowerCase()}, "${item.title}" stands out for its unique charm.`,
-      `A must-have for ${item.category.toLowerCase()} lovers, "${item.title}" blends creativity and comfort seamlessly.`,
-    ];
-    return templates[Math.floor(Math.random() * templates.length)];
+  recordInteraction(category: string) {
+    if (typeof window === "undefined") return;
+    const key = `interaction_${category}`;
+    const count = Number(localStorage.getItem(key) || "0");
+    localStorage.setItem(key, String(count + 1));
   },
 
-  // Smart recommendation text
-  getRecommendationText() {
-    const data = JSON.parse(localStorage.getItem("userInteractions") || "{}");
-    const topCategory = Object.keys(data).sort(
-      (a, b) => data[b] - data[a]
-    )[0];
+  getRecommendationText(): string {
+    const categories = Object.keys(localStorage)
+      .filter((k) => k.startsWith("interaction_"))
+      .map((k) => ({
+        category: k.replace("interaction_", ""),
+        count: Number(localStorage.getItem(k) || "0"),
+      }));
 
-    if (!topCategory) {
-      const greetings = [
-        "Welcome back! Here's what’s trending today.",
-        "Discover something new that might match your vibe.",
-        "Explore a mix of interests just for you.",
-      ];
-      return greetings[Math.floor(Math.random() * greetings.length)];
+    if (categories.length === 0) {
+      return "We’re curating personalized content just for you!";
     }
 
-    const templates = [
-      `Because you loved ${topCategory}, here are some fresh picks you might enjoy.`,
-      `Your ${topCategory} style is on point — check out more like it.`,
-      `We noticed you’re into ${topCategory}. Here’s what’s trending today.`,
-    ];
-    return templates[Math.floor(Math.random() * templates.length)];
-  },
-
-  // Get related items
-  getRelatedItems(items: Item[], currentCategory: string): Item[] {
-    return items
-      .filter((item) => item.category === currentCategory)
-      .sort(() => 0.5 - Math.random())
-      .slice(0, 4);
+    const top = categories.sort((a, b) => b.count - a.count)[0];
+    return `You seem to enjoy ${top.category}! Here are more picks based on your interests.`;
   },
 };

@@ -4,15 +4,15 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Settings, Bell, Home, PenTool, User } from "lucide-react";
-import { aiPersonalization, Item } from "@/lib/aiLogic";
 import { interestsData } from "@/lib/data";
+import { aiPersonalization, Item } from "@/lib/aiLogic";
 
 interface Tile {
   id: string;
   title: string;
   image: string;
   height: string;
-  category?: string;
+  category: string;
 }
 
 export default function DashboardPage() {
@@ -21,88 +21,64 @@ export default function DashboardPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      const saved = localStorage.getItem("userInterests");
+    const saved = localStorage.getItem("userInterests");
+    if (!saved) {
+      router.push("/interests");
+      return;
+    }
 
-      if (!saved) {
-        router.push("/interests");
-        return;
-      }
+    let parsed: string[] = [];
+    try {
+      parsed = JSON.parse(saved);
+    } catch {
+      parsed = [];
+    }
 
-      let parsed: string[] = [];
-      try {
-        parsed = JSON.parse(saved);
-      } catch {
-        parsed = [];
-      }
+    // Generate tiles based on interests
+    const personalizedTiles = interestsData
+      .filter((item) => parsed.includes(item.name))
+      .flatMap((item) =>
+        item.samples.map((src, i) => ({
+          id: `${item.name}-${i}`,
+          title: item.name,
+          image: src,
+          height:
+            i % 3 === 0 ? "h-[320px]" : i % 2 === 0 ? "h-[260px]" : "h-[380px]",
+          category: item.name,
+        }))
+      );
 
-      // Generate personalized tiles based on interests
-      const personalizedTiles = interestsData
-        .filter((item) => parsed.includes(item.name))
-        .flatMap((item) =>
-          item.samples.map((src, i) => ({
-            id: `${item.name}-${i}`,
-            title: item.name,
-            image: src,
-            height:
-              i % 3 === 0 ? "h-[320px]" : i % 2 === 0 ? "h-[260px]" : "h-[380px]",
-            category: item.name,
-          }))
-        );
-
-      // Simulated items for personalization
-      const mockItems: Item[] = personalizedTiles.map((t) => ({
-        id: t.id,
-        title: t.title,
-        img: t.image,
-        category: t.category || "General",
-      }));
-
-      const interestCategories = mockItems.map((item) => item.category);
-      const weights = aiPersonalization.getWeights(interestCategories);
-      const sortedItems = aiPersonalization.sortItemsByPreference(mockItems, weights);
-
-      setTiles(sortedItems.map((i) => ({
-        id: i.id,
-        title: i.title,
-        image: i.img,
-        height:
-          Math.random() > 0.5
-            ? "h-[320px]"
-            : Math.random() > 0.5
-            ? "h-[260px]"
-            : "h-[380px]",
-        category: i.category,
-      })));
-
-      setRecommendationText(aiPersonalization.getRecommendationText());
-    }, 0);
-
-    return () => clearTimeout(timer);
-  }, [router]);
-
-  const handleTileClick = (tile: Tile) => {
-    if (tile.category) aiPersonalization.recordInteraction(tile.category);
-
-    // Recalculate AI recommendations dynamically
-    const interestCategories = tiles.map((t) => t.category || "General");
-    const weights = aiPersonalization.getWeights(interestCategories);
-    const sortedItems = aiPersonalization.sortItemsByPreference(
-      tiles.map((t) => ({
-        id: t.id,
-        title: t.title,
-        img: t.image,
-        category: t.category || "General",
-      })),
-      weights
+    // 📊 AI personalization integration
+    const weights = aiPersonalization.getWeights(
+      personalizedTiles.map((tile) => ({
+        id: tile.id,
+        title: tile.title,
+        img: tile.image,
+        category: tile.category,
+      }))
     );
 
-    setTiles(sortedItems);
-    setRecommendationText(aiPersonalization.getRecommendationText());
+    const sortedTiles = aiPersonalization
+      .sortItemsByPreference(
+        personalizedTiles.map((tile) => ({
+          id: tile.id,
+          title: tile.title,
+          img: tile.image,
+          category: tile.category,
+        })),
+        weights
+      )
+      .map((item) => ({
+        id: String(item.id),
+        title: item.title,
+        image: item.img,
+        height: "h-[300px]",
+        category: item.category,
+      }));
 
-    // Go to detail page
-    router.push(`/details/${tile.title.toLowerCase()}`);
-  };
+    setTiles(sortedTiles);
+    setRecommendationText(aiPersonalization.getRecommendationText());
+  }, [router]);
 
   return (
     <div className="flex min-h-screen bg-gray-50 text-black">
@@ -114,7 +90,6 @@ export default function DashboardPage() {
         >
           J
         </h1>
-
         <nav className="flex flex-col items-center space-y-6 mt-10">
           <button className="hover:text-gray-300" title="Home">
             <Home size={22} />
@@ -142,8 +117,13 @@ export default function DashboardPage() {
           </div>
         </header>
 
+        {/* AI Recommendation Text */}
+        <div className="px-8 py-4 text-gray-600 text-sm">
+          {recommendationText}
+        </div>
+
+        {/* Masonry Layout */}
         <section className="p-8">
-          <p className="text-gray-600 mb-4">{recommendationText}</p>
           <div
             className="
               columns-1
@@ -158,7 +138,7 @@ export default function DashboardPage() {
             {tiles.map((tile) => (
               <div
                 key={tile.id}
-                onClick={() => handleTileClick(tile)}
+                onClick={() => router.push(`/details/${tile.id}`)}
                 className="
                   relative
                   mb-6
@@ -199,43 +179,6 @@ export default function DashboardPage() {
             ))}
           </div>
         </section>
-
-        <footer className="bg-black text-white py-10 text-sm text-center mt-auto">
-          <div className="flex flex-col md:flex-row justify-between px-10 md:px-20">
-            <div className="text-left mb-4 md:mb-0">
-              <h3 className="font-bold text-lg mb-2">JumpStart</h3>
-              <p className="text-gray-400 max-w-sm">
-                Empowering e-commerce with AI-driven personalization for custom
-                experiences, better engagement, and accelerated growth.
-              </p>
-            </div>
-
-            <div className="flex gap-16 justify-center md:justify-end">
-              <div>
-                <h4 className="font-semibold mb-2">Site Map</h4>
-                <ul className="text-gray-400 space-y-1">
-                  <li>Explore</li>
-                  <li>Home</li>
-                  <li>About</li>
-                  <li>Businesses</li>
-                  <li>Create</li>
-                  <li>Contact Us</li>
-                </ul>
-              </div>
-              <div>
-                <h4 className="font-semibold mb-2">Legal</h4>
-                <ul className="text-gray-400 space-y-1">
-                  <li>Privacy Policy</li>
-                  <li>Terms of Service</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-10 text-gray-500">
-            Copyright © 2025 JumpStart. All Rights Reserved.
-          </div>
-        </footer>
       </main>
     </div>
   );
