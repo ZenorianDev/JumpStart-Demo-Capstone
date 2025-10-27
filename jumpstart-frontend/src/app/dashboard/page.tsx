@@ -4,60 +4,56 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Settings, Bell, Home, PenTool, User } from "lucide-react";
+import { interestsData } from "@/lib/data";
 
 interface Tile {
-  id: number;
+  id: string;
   title: string;
   image: string;
   height: string;
 }
 
 export default function DashboardPage() {
-  const [userInterests, setUserInterests] = useState<string[]>([]);
   const [tiles, setTiles] = useState<Tile[]>([]);
   const router = useRouter();
 
-  // Load user interests from localStorage
   useEffect(() => {
-    requestAnimationFrame(() => {
+    const timer = setTimeout(() => {
       const saved = localStorage.getItem("userInterests");
+
       if (!saved) {
-        // no interests -> redirect
         router.push("/interests");
         return;
       }
 
-      const parsed: string[] = (() => {
-        try {
-          return JSON.parse(saved);
-        } catch {
-          return [];
-        }
-      })();
+      let parsed: string[] = [];
+      try {
+        parsed = JSON.parse(saved);
+      } catch {
+        parsed = [];
+      }
 
-      // Build tiles deterministically (compute first, then set state once)
-      const simulatedTiles = Array.from({ length: 15 }, (_, i) => {
-        const title =
-          parsed.length > 0
-            ? parsed[Math.floor(Math.random() * parsed.length)]
-            : "Explore";
-        return {
-          id: i + 1,
-          title,
-          image: `https://source.unsplash.com/random/800x${600 + i * 5}?${encodeURIComponent(title)}`,
-          height: i % 3 === 0 ? "h-80" : i % 2 === 0 ? "h-60" : "h-72",
-        };
-      });
+      // Generate personalized tiles based on selected interests
+      const personalizedTiles = interestsData
+        .filter((item) => parsed.includes(item.name))
+        .flatMap((item) =>
+          item.samples.map((src, i) => ({
+            id: `${item.name}-${i}`,
+            title: item.name,
+            image: src,
+            height:
+              i % 3 === 0 ? "h-[320px]" : i % 2 === 0 ? "h-[260px]" : "h-[380px]",
+          }))
+        );
 
-      // Now update state once
-      setUserInterests(parsed);
-      setTiles(simulatedTiles);
-    });
+      setTiles(personalizedTiles);
+    }, 0);
+
+    return () => clearTimeout(timer);
   }, [router]);
 
-
   return (
-    <div className="flex min-h-screen bg-white text-black">
+    <div className="flex min-h-screen bg-gray-50 text-black">
       {/* Sidebar */}
       <aside className="w-20 bg-black text-white flex flex-col items-center py-6 space-y-8 fixed h-full">
         <h1
@@ -83,7 +79,7 @@ export default function DashboardPage() {
       {/* Main Content */}
       <main className="flex-1 ml-20 flex flex-col min-h-screen">
         {/* Top Bar */}
-        <header className="flex justify-between items-center px-8 py-6 border-b">
+        <header className="flex justify-between items-center px-8 py-6 border-b bg-white sticky top-0 z-40">
           <h2 className="text-2xl font-semibold">Your Personalized Feed</h2>
           <div className="flex items-center space-x-4">
             <button className="hover:text-gray-600">
@@ -95,24 +91,62 @@ export default function DashboardPage() {
           </div>
         </header>
 
-        {/* Masonry Layout */}
-        <section className="p-8 grid gap-6 auto-rows-[10px] grid-cols-[repeat(auto-fill,minmax(250px,1fr))]">
-          {tiles.map((tile) => (
-            <div
-              key={tile.id}
-              className={`relative overflow-hidden rounded-2xl shadow-md ${tile.height} group`}
-            >
-              <Image
-                src={tile.image}
-                alt={tile.title}
-                fill
-                className="object-cover transition-transform duration-300 group-hover:scale-110"
-              />
-              <div className="absolute bottom-0 bg-black/60 text-white text-sm p-2 w-full text-center">
-                {tile.title}
+        {/* Masonry Layout (Pinterest style) */}
+        <section className="p-8">
+          <div
+            className="
+              columns-1
+              sm:columns-2
+              md:columns-3
+              lg:columns-4
+              xl:columns-5
+              gap-6
+              space-y-6
+            "
+          >
+            {tiles.map((tile) => (
+              <div
+                key={tile.id}
+                onClick={() => router.push(`/details/${tile.title.toLowerCase()}`)}
+                className="
+                  relative
+                  mb-6
+                  rounded-2xl
+                  overflow-hidden
+                  shadow-md
+                  break-inside-avoid
+                  group
+                  hover:shadow-xl
+                  cursor-pointer
+                  transition
+                  duration-300
+                "
+              >
+                <Image
+                  src={tile.image}
+                  alt={tile.title}
+                  width={800}
+                  height={600}
+                  className="w-full h-auto object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+                <div
+                  className="
+                    absolute inset-0
+                    bg-black/0
+                    group-hover:bg-black/40
+                    transition-all
+                    duration-300
+                    flex items-end
+                    justify-center
+                  "
+                >
+                  <p className="text-white opacity-0 group-hover:opacity-100 mb-4 text-lg font-medium transition-opacity duration-300">
+                    {tile.title}
+                  </p>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </section>
 
         {/* Footer */}

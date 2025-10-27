@@ -21,22 +21,20 @@ export default function LandingPage() {
 
       {/* HERO SECTION */}
       <section className="relative h-screen flex flex-col justify-center items-center text-center overflow-hidden">
-        {/* Optimized Background */}
-        <div className="absolute inset-0 -z-10">
-          {/* ✅ Added relative wrapper with explicit height */}
-          <div className="relative w-full h-full">
-            <Image
-              src="/images/jumpstart-hero.png"
-              alt="Hero background"
-              fill
-              priority
-              sizes="100vw"
-              className="object-cover"
-            />
-          </div>
+        {/* Background Image */}
+        <div className="absolute inset-0">
+          <Image
+            src="/images/jumpstart-hero.png"
+            alt="Hero background"
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover"
+          />
           <div className="absolute inset-0 bg-black/70" />
         </div>
 
+        {/* Foreground Text */}
         <div className="relative z-10 px-6">
           <h1 className="text-5xl md:text-7xl font-bold mb-4">JumpStart</h1>
           <p className="text-lg md:text-xl mb-8 text-gray-300">
