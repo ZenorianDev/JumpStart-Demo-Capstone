@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Settings, Bell, Home, PenTool, User } from "lucide-react";
+import { aiPersonalization, Item } from "@/lib/aiLogic";
 import { interestsData } from "@/lib/data";
 
 interface Tile {
@@ -11,10 +12,12 @@ interface Tile {
   title: string;
   image: string;
   height: string;
+  category?: string;
 }
 
 export default function DashboardPage() {
   const [tiles, setTiles] = useState<Tile[]>([]);
+  const [recommendationText, setRecommendationText] = useState("");
   const router = useRouter();
 
   useEffect(() => {
@@ -33,7 +36,7 @@ export default function DashboardPage() {
         parsed = [];
       }
 
-      // Generate personalized tiles based on selected interests
+      // Generate personalized tiles based on interests
       const personalizedTiles = interestsData
         .filter((item) => parsed.includes(item.name))
         .flatMap((item) =>
@@ -43,14 +46,63 @@ export default function DashboardPage() {
             image: src,
             height:
               i % 3 === 0 ? "h-[320px]" : i % 2 === 0 ? "h-[260px]" : "h-[380px]",
+            category: item.name,
           }))
         );
 
-      setTiles(personalizedTiles);
+      // Simulated items for personalization
+      const mockItems: Item[] = personalizedTiles.map((t) => ({
+        id: t.id,
+        title: t.title,
+        img: t.image,
+        category: t.category || "General",
+      }));
+
+      const interestCategories = mockItems.map((item) => item.category);
+      const weights = aiPersonalization.getWeights(interestCategories);
+      const sortedItems = aiPersonalization.sortItemsByPreference(mockItems, weights);
+
+      setTiles(sortedItems.map((i) => ({
+        id: i.id,
+        title: i.title,
+        image: i.img,
+        height:
+          Math.random() > 0.5
+            ? "h-[320px]"
+            : Math.random() > 0.5
+            ? "h-[260px]"
+            : "h-[380px]",
+        category: i.category,
+      })));
+
+      setRecommendationText(aiPersonalization.getRecommendationText());
     }, 0);
 
     return () => clearTimeout(timer);
   }, [router]);
+
+  const handleTileClick = (tile: Tile) => {
+    if (tile.category) aiPersonalization.recordInteraction(tile.category);
+
+    // Recalculate AI recommendations dynamically
+    const interestCategories = tiles.map((t) => t.category || "General");
+    const weights = aiPersonalization.getWeights(interestCategories);
+    const sortedItems = aiPersonalization.sortItemsByPreference(
+      tiles.map((t) => ({
+        id: t.id,
+        title: t.title,
+        img: t.image,
+        category: t.category || "General",
+      })),
+      weights
+    );
+
+    setTiles(sortedItems);
+    setRecommendationText(aiPersonalization.getRecommendationText());
+
+    // Go to detail page
+    router.push(`/details/${tile.title.toLowerCase()}`);
+  };
 
   return (
     <div className="flex min-h-screen bg-gray-50 text-black">
@@ -78,7 +130,6 @@ export default function DashboardPage() {
 
       {/* Main Content */}
       <main className="flex-1 ml-20 flex flex-col min-h-screen">
-        {/* Top Bar */}
         <header className="flex justify-between items-center px-8 py-6 border-b bg-white sticky top-0 z-40">
           <h2 className="text-2xl font-semibold">Your Personalized Feed</h2>
           <div className="flex items-center space-x-4">
@@ -91,8 +142,8 @@ export default function DashboardPage() {
           </div>
         </header>
 
-        {/* Masonry Layout (Pinterest style) */}
         <section className="p-8">
+          <p className="text-gray-600 mb-4">{recommendationText}</p>
           <div
             className="
               columns-1
@@ -107,7 +158,7 @@ export default function DashboardPage() {
             {tiles.map((tile) => (
               <div
                 key={tile.id}
-                onClick={() => router.push(`/details/${tile.title.toLowerCase()}`)}
+                onClick={() => handleTileClick(tile)}
                 className="
                   relative
                   mb-6
@@ -149,7 +200,6 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        {/* Footer */}
         <footer className="bg-black text-white py-10 text-sm text-center mt-auto">
           <div className="flex flex-col md:flex-row justify-between px-10 md:px-20">
             <div className="text-left mb-4 md:mb-0">
