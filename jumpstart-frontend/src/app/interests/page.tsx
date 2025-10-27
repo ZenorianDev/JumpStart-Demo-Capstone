@@ -7,17 +7,17 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const interestsList = [
   { id: 1, title: "Fashion", img: "/images/fashion.png" },
-  { id: 2, title: "Technology", img: "/images/tech.jpg" },
+  { id: 2, title: "Electronics", img: "/images/tech.jpg" },
   { id: 3, title: "Travel", img: "/images/travel.jpg" },
   { id: 4, title: "Sports", img: "/images/sports.jpg" },
-  { id: 5, title: "Food", img: "/images/food.jpg" },
+  { id: 5, title: "Kitchen", img: "/images/kitchen.jpg" },
   { id: 6, title: "Art", img: "/images/art.png" },
   { id: 7, title: "Furniture", img: "/images/furniture.jpg" },
-  { id: 8, title: "Health", img: "/images/health.jpg" },
-  { id: 9, title: "Photography", img: "/images/photo.jpg" },
-  { id: 10, title: "Music", img: "/images/music.jpg" },
-  { id: 11, title: "Business", img: "/images/business.jpg" },
-  { id: 12, title: "Science", img: "/images/science.jpg" },
+  { id: 8, title: "Health & Beauty", img: "/images/health.jpg" },
+  { id: 9, title: "Food", img: "/images/food.png" },
+  { id: 10, title: "Beverages", img: "/images/drinks.jpg" },
+  { id: 11, title: "Toys", img: "/images/toys.jpg" },
+  { id: 12, title: "Hardware", img: "/images/hardware.jpg" },
 ];
 
 export default function InterestSelectionPage() {
